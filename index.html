@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>共享清單工具</title>
+  <meta name="theme-color" content="#d46a4d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="共享清單工具">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <style>
+    :root {
+      --bg-top: #f6efe4;
+      --bg-bottom: #dce9f2;
+      --card: rgba(255, 255, 255, 0.88);
+      --card-border: rgba(88, 110, 128, 0.16);
+      --text-main: #1f2a33;
+      --text-muted: #61717d;
+      --accent: #d46a4d;
+      --accent-hover: #bc583d;
+      --danger: #d1495b;
+      --danger-hover: #ba3748;
+      --success: #2f855a;
+      --warning: #b7791f;
+      --shadow: 0 18px 45px rgba(57, 73, 86, 0.14);
+      --soft-line: rgba(97, 113, 125, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 32%),
+        linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .panel {
+      width: min(100%, 820px);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 28px;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      letter-spacing: 0.03em;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .subtitle,
+    .hint,
+    .cloud-note,
+    .status-bar {
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+    }
+
+    .card-section {
+      margin-bottom: 20px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(97, 113, 125, 0.14);
+    }
+
+    .composer,
+    .cloud-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .input-row,
+    .extra-row,
+    .cloud-actions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .input-row {
+      grid-template-columns: 1fr auto;
+    }
+
+    .extra-row,
+    .cloud-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .cloud-actions {
+      grid-template-columns: repeat(3, auto);
+      justify-content: start;
+      align-items: center;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="password"] {
+      width: 100%;
+      border: 1px solid rgba(97, 113, 125, 0.22);
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.9);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    input[type="password"]:focus {
+      border-color: rgba(212, 106, 77, 0.65);
+      box-shadow: 0 0 0 4px rgba(212, 106, 77, 0.12);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    button,
+    .file-picker {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover,
+    .file-picker:hover {
+      transform: translateY(-1px);
+    }
+
+    .add-button,
+    .sync-button {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .add-button:hover,
+    .sync-button:hover {
+      background: var(--accent-hover);
+    }
+
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .file-picker,
+    .secondary-button,
+    .order-button {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text-main);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+    }
+
+    .secondary-button:hover,
+    .file-picker:hover,
+    .order-button:hover {
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(212, 106, 77, 0.26);
+    }
+
+    .file-name {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .status-bar {
+      min-height: 24px;
+      font-size: 0.92rem;
+    }
+
+    .status-success {
+      color: var(--success);
+    }
+
+    .status-warning {
+      color: var(--warning);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .clear-button {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+    }
+
+    .clear-button:hover {
+      color: var(--danger);
+      border-color: rgba(209, 73, 91, 0.24);
+      background: rgba(209, 73, 91, 0.06);
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(97, 113, 125, 0.14);
+    }
+
+    .item-content {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .item-text {
+      word-break: break-word;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .item-link {
+      color: #21659b;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .item-link:hover {
+      text-decoration: underline;
+    }
+
+    .item-image {
+      width: min(100%, 260px);
+      border-radius: 14px;
+      border: 1px solid var(--soft-line);
+      display: block;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .item-actions {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .delete-button {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .delete-button:hover {
+      background: var(--danger-hover);
+    }
+
+    .empty-state {
+      margin: 18px 0 0;
+      padding: 22px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px dashed rgba(97, 113, 125, 0.24);
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .hint {
+      margin: 16px 0 0;
+      font-size: 0.92rem;
+    }
+
+    .cloud-note {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 720px) {
+      .extra-row,
+      .cloud-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .panel {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .input-row,
+      .cloud-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .meta {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      li {
+        grid-template-columns: 1fr;
+      }
+
+      .item-actions {
+        justify-content: flex-end;
+      }
+    }
+
+    @media print {
+      #list {
+        counter-reset: item;
+      }
+
+      body {
+        background: #fff;
+        padding: 0;
+        display: block;
+      }
+
+      .panel {
+        width: 100%;
+        max-width: none;
+        background: #fff;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+      }
+
+      h1,
+      .subtitle,
+      .card-section,
+      .meta,
+      .actions,
+      .hint,
+      .empty-state {
+        display: none !important;
+      }
+
+      li {
+        background: #fff;
+        border: none;
+        break-inside: avoid;
+        padding: 0;
+        margin: 0 0 14px;
+        display: block;
+        counter-increment: item;
+      }
+
+      .item-actions {
+        display: none;
+      }
+
+      .item-text {
+        display: block;
+        font-size: 12pt;
+        line-height: 1.6;
+      }
+
+      .item-text::before {
+        content: counter(item) ". ";
+      }
+
+      .item-link {
+        display: block;
+        margin-top: 4px;
+        color: #000;
+        text-decoration: none;
+      }
+
+      .item-image {
+        max-width: 240px;
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>共享清單工具</h1>
+    <p class="subtitle">這是一個可離線使用、也可同步到雲端的清單工具。你可以在不同裝置輸入同一組共享代碼，讀取同一份資料。</p>
+
+    <section class="card-section">
+      <h2>新增項目</h2>
+      <div class="composer" aria-label="新增清單項目">
+        <div class="input-row">
+          <input type="text" id="inputText" placeholder="輸入清單內容..." aria-label="清單文字">
+          <button type="button" class="add-button" id="addButton">新增</button>
+        </div>
+
+        <div class="extra-row">
+          <input type="url" id="linkInput" placeholder="輸入連結網址，例如 example.com" aria-label="連結網址">
+          <input type="url" id="imageInput" placeholder="輸入圖片網址，例如 https://..." aria-label="圖片網址">
+        </div>
+
+        <div class="file-row">
+          <label class="file-picker" for="imageFileInput">選擇圖片</label>
+          <span id="selectedFileName" class="file-name">尚未選擇圖片</span>
+        </div>
+        <input type="file" id="imageFileInput" accept="image/*" class="sr-only">
+      </div>
+    </section>
+
+    <section class="card-section">
+      <h2>雲端共享設定</h2>
+      <div class="cloud-grid">
+        <label>
+          雲端 API 網址
+          <input type="url" id="cloudEndpointInput" placeholder="https://你的-cloud-worker.example.workers.dev">
+        </label>
+        <label>
+          共享代碼
+          <input type="text" id="shareKeyInput" placeholder="例如 team-alpha">
+        </label>
+        <label>
+          管理金鑰
+          <input type="password" id="adminKeyInput" placeholder="設定後才能寫入雲端">
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="autoSyncCheckbox">
+          啟用自動同步
+        </label>
+      </div>
+      <div class="cloud-actions">
+        <button type="button" class="sync-button" id="saveCloudButton">同步到雲端</button>
+        <button type="button" class="secondary-button" id="loadCloudButton">從雲端載入</button>
+        <button type="button" class="secondary-button" id="saveSettingsButton">儲存同步設定</button>
+      </div>
+      <p id="cloudStatus" class="status-bar">尚未設定雲端同步。</p>
+      <p class="cloud-note">前端已支援共享同步，並附上 Cloudflare Worker 後端範本。只要部署後，把網址貼到這裡，多台裝置就能共用同一份清單。</p>
+    </section>
+
+    <div class="meta">
+      <span id="countText">目前共有 0 筆項目</span>
+      <div class="actions">
+        <button type="button" class="secondary-button" id="printButton">列印清單</button>
+        <button type="button" class="secondary-button" id="exportButton">匯出 Word</button>
+        <button type="button" class="secondary-button" id="importButton">匯入資料</button>
+        <button type="button" class="clear-button" id="clearButton">清空全部</button>
+      </div>
+    </div>
+
+    <ul id="list"></ul>
+    <p id="emptyState" class="empty-state">目前還沒有任何項目，先新增一筆試試看。</p>
+    <p class="hint">可匯入 `TXT` 或 `JSON`。如果要跨裝置共享，請先在下方後端範本部署雲端 API，然後在各裝置填入相同的 API 網址與共享代碼。</p>
+    <input type="file" id="fileInput" accept="application/json,.json,.txt" hidden>
+  </main>
+
+  <script>
+    let items = [];
+    let pendingImageDataUrl = "";
+
+    const STORAGE_KEY = "shared-list-items";
+    const CLOUD_SETTINGS_KEY = "shared-list-cloud-settings";
+
+    const input = document.getElementById("inputText");
+    const linkInput = document.getElementById("linkInput");
+    const imageInput = document.getElementById("imageInput");
+    const imageFileInput = document.getElementById("imageFileInput");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const list = document.getElementById("list");
+    const countText = document.getElementById("countText");
+    const emptyState = document.getElementById("emptyState");
+    const addButton = document.getElementById("addButton");
+    const clearButton = document.getElementById("clearButton");
+    const printButton = document.getElementById("printButton");
+    const exportButton = document.getElementById("exportButton");
+    const importButton = document.getElementById("importButton");
+    const fileInput = document.getElementById("fileInput");
+    const cloudEndpointInput = document.getElementById("cloudEndpointInput");
+    const shareKeyInput = document.getElementById("shareKeyInput");
+    const adminKeyInput = document.getElementById("adminKeyInput");
+    const autoSyncCheckbox = document.getElementById("autoSyncCheckbox");
+    const cloudStatus = document.getElementById("cloudStatus");
+    const saveCloudButton = document.getElementById("saveCloudButton");
+    const loadCloudButton = document.getElementById("loadCloudButton");
+    const saveSettingsButton = document.getElementById("saveSettingsButton");
+
+    window.onload = function () {
+      loadLocalItems();
+      loadCloudSettings();
+      renderList();
+    };
+
+    addButton.addEventListener("click", addItem);
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        addItem();
+      }
+    });
+
+    clearButton.addEventListener("click", function () {
+      if (items.length === 0) return;
+
+      items = [];
+      saveAndRender();
+    });
+
+    printButton.addEventListener("click", function () {
+      window.print();
+    });
+
+    exportButton.addEventListener("click", exportItems);
+
+    importButton.addEventListener("click", function () {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", importItems);
+
+    saveCloudButton.addEventListener("click", function () {
+      saveCloudSettings();
+      syncToCloud(true);
+    });
+
+    loadCloudButton.addEventListener("click", function () {
+      saveCloudSettings();
+      loadFromCloud(true);
+    });
+
+    saveSettingsButton.addEventListener("click", function () {
+      saveCloudSettings();
+      setCloudStatus("同步設定已儲存到本機。", "success");
+    });
+
+    imageFileInput.addEventListener("change", function (event) {
+      const file = event.target.files[0];
+
+      if (!file) {
+        pendingImageDataUrl = "";
+        selectedFileName.innerText = "尚未選擇圖片";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (loadEvent) {
+        pendingImageDataUrl = loadEvent.target.result;
+        selectedFileName.innerText = file.name;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function loadLocalItems() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+
+      if (!saved) return;
+
+      try {
+        items = normalizeImportedItems(JSON.parse(saved));
+      } catch (error) {
+        items = [];
+        setCloudStatus("本機資料格式有誤，已跳過舊資料。", "warning");
+      }
+    }
+
+    function loadCloudSettings() {
+      const saved = localStorage.getItem(CLOUD_SETTINGS_KEY);
+
+      if (!saved) return;
+
+      try {
+        const settings = JSON.parse(saved);
+        cloudEndpointInput.value = typeof settings.endpoint === "string" ? settings.endpoint : "";
+        shareKeyInput.value = typeof settings.shareKey === "string" ? settings.shareKey : "";
+        adminKeyInput.value = typeof settings.adminKey === "string" ? settings.adminKey : "";
+        autoSyncCheckbox.checked = settings.autoSync === true;
+
+        if (settings.endpoint && settings.shareKey) {
+          setCloudStatus("已載入本機同步設定，可直接進行雲端同步。", "success");
+        }
+      } catch (error) {
+        setCloudStatus("同步設定讀取失敗，請重新輸入。", "warning");
+      }
+    }
+
+    function saveCloudSettings() {
+      const settings = getCloudSettings();
+
+      localStorage.setItem(CLOUD_SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function getCloudSettings() {
+      return {
+        endpoint: cloudEndpointInput.value.trim().replace(/\/+$/, ""),
+        shareKey: shareKeyInput.value.trim(),
+        adminKey: adminKeyInput.value.trim(),
+        autoSync: autoSyncCheckbox.checked
+      };
+    }
+
+    function validateCloudSettings(requireAdminKey) {
+      const settings = getCloudSettings();
+
+      if (!settings.endpoint || !settings.shareKey) {
+        setCloudStatus("請先輸入雲端 API 網址和共享代碼。", "warning");
+        return null;
+      }
+
+      if (requireAdminKey && !settings.adminKey) {
+        setCloudStatus("要寫入雲端時，請輸入管理金鑰。", "warning");
+        return null;
+      }
+
+      return settings;
+    }
+
+    function addItem() {
+      const text = input.value.trim();
+      const link = normalizeUrl(linkInput.value.trim());
+      const image = normalizeUrl(imageInput.value.trim()) || pendingImageDataUrl;
+
+      if (text === "" && link === "" && image === "") return;
+
+      items.push({
+        text: text,
+        link: link,
+        image: image
+      });
+
+      saveAndRender();
+      resetComposer();
+      input.focus();
+    }
+
+    function deleteItem(index) {
+      items.splice(index, 1);
+      saveAndRender();
+    }
+
+    function moveItem(index, direction) {
+      const targetIndex = index + direction;
+
+      if (targetIndex < 0 || targetIndex >= items.length) return;
+
+      const currentItem = items[index];
+      items[index] = items[targetIndex];
+      items[targetIndex] = currentItem;
+      saveAndRender();
+    }
+
+    async function syncToCloud(showSuccessMessage) {
+      const settings = validateCloudSettings(true);
+
+      if (!settings) return;
+
+      setCloudStatus("正在把清單同步到雲端...", "warning");
+
+      try {
+        const response = await fetch(settings.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Share-Key": settings.shareKey,
+            "X-Admin-Key": settings.adminKey
+          },
+          body: JSON.stringify({
+            items: items,
+            updatedAt: new Date().toISOString()
+          })
+        });
+
+        const data = await parseJsonSafely(response);
+
+        if (!response.ok) {
+          throw new Error((data && data.error) || "同步失敗");
+        }
+
+        if (showSuccessMessage) {
+          setCloudStatus("已成功同步到雲端。", "success");
+        } else {
+          setCloudStatus("已自動同步到雲端。", "success");
+        }
+      } catch (error) {
+        setCloudStatus("同步到雲端失敗: " + error.message, "error");
+      }
+    }
+
+    async function loadFromCloud(showSuccessMessage) {
+      const settings = validateCloudSettings(false);
+
+      if (!settings) return;
+
+      setCloudStatus("正在從雲端讀取清單...", "warning");
+
+      try {
+        const response = await fetch(settings.endpoint, {
+          method: "GET",
+          headers: {
+            "X-Share-Key": settings.shareKey
+          }
+        });
+
+        const data = await parseJsonSafely(response);
+
+        if (!response.ok) {
+          throw new Error((data && data.error) || "讀取失敗");
+        }
+
+        items = normalizeImportedItems(data && data.items ? data.items : []);
+        saveAndRender(false);
+
+        if (showSuccessMessage) {
+          setCloudStatus("已從雲端載入最新清單。", "success");
+        }
+      } catch (error) {
+        setCloudStatus("從雲端讀取失敗: " + error.message, "error");
+      }
+    }
+
+    async function parseJsonSafely(response) {
+      try {
+        return await response.json();
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function exportItems() {
+      const blob = new Blob(["\ufeff" + buildWordExportDocument()], {
+        type: "application/msword;charset=utf-8"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "shared-list.doc";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function buildWordExportDocument() {
+      const listMarkup = items.map(function (item, index) {
+        const parts = [];
+
+        parts.push(
+          '<div class="item-title">' +
+          (index + 1) +
+          ". " +
+          escapeWordHtml(item.text || "(無文字內容)") +
+          "</div>"
+        );
+
+        if (item.link) {
+          parts.push(
+            '<a class="item-link" href="' +
+            escapeWordAttribute(item.link) +
+            '">' +
+            escapeWordHtml(item.link) +
+            "</a>"
+          );
+        }
+
+        if (item.image) {
+          parts.push(
+            '<img class="item-image" src="' +
+            escapeWordAttribute(item.image) +
+            '" alt="' +
+            escapeWordAttribute(item.text || "清單圖片") +
+            '">'
+          );
+        }
+
+        return '<li class="item">' + parts.join("") + "</li>";
+      }).join("");
+
+      return (
+        '<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>共享清單工具</title><style>' +
+        "body{font-family:'Segoe UI','Noto Sans TC',sans-serif;color:#1f2a33;background:#fff;margin:0;padding:32px;}main{max-width:800px;margin:0 auto;}h1{margin:0 0 8px;font-size:26px;}p{margin:0 0 24px;color:#61717d;}ul{list-style:none;margin:0;padding:0;}.item{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid #d9e0e5;}.item-title{font-size:12pt;line-height:1.6;white-space:pre-wrap;word-break:break-word;}.item-link{display:block;margin-top:6px;color:#000;text-decoration:none;word-break:break-all;}.item-image{display:block;max-width:320px;max-height:320px;margin-top:10px;border:1px solid #d9e0e5;border-radius:10px;}@page{margin:20mm;}" +
+        "</style></head><body><main><h1>共享清單工具</h1><p>共 " +
+        items.length +
+        " 筆項目</p><ul>" +
+        listMarkup +
+        "</ul></main></body></html>"
+      );
+    }
+
+    function escapeWordHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/\r?\n/g, "<br>");
+    }
+
+    function escapeWordAttribute(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function importItems(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function (loadEvent) {
+        try {
+          const content = loadEvent.target.result;
+          let importedItems;
+
+          if (file.name.toLowerCase().endsWith(".txt")) {
+            importedItems = content
+              .split(/\r?\n/)
+              .map(function (item) {
+                return item.trim();
+              })
+              .filter(function (item) {
+                return item !== "";
+              });
+          } else {
+            const parsed = JSON.parse(content);
+            importedItems = Array.isArray(parsed) ? parsed : parsed.items;
+          }
+
+          items = normalizeImportedItems(importedItems);
+          saveAndRender();
+          input.focus();
+        } catch (error) {
+          alert("匯入失敗，請確認檔案是有效的 TXT 或 JSON 格式。");
+        } finally {
+          fileInput.value = "";
+        }
+      };
+
+      reader.readAsText(file, "utf-8");
+    }
+
+    function normalizeImportedItems(rawItems) {
+      if (!Array.isArray(rawItems)) {
+        throw new Error("invalid-format");
+      }
+
+      return rawItems.map(function (item) {
+        if (typeof item === "string") {
+          return {
+            text: item,
+            link: "",
+            image: ""
+          };
+        }
+
+        if (!item || typeof item !== "object") {
+          throw new Error("invalid-format");
+        }
+
+        const normalizedItem = {
+          text: typeof item.text === "string" ? item.text : "",
+          link: typeof item.link === "string" ? item.link : "",
+          image: typeof item.image === "string" ? item.image : ""
+        };
+
+        if (normalizedItem.text === "" && normalizedItem.link === "" && normalizedItem.image === "") {
+          throw new Error("invalid-format");
+        }
+
+        return normalizedItem;
+      });
+    }
+
+    function normalizeUrl(value) {
+      if (value === "") return "";
+
+      if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value)) {
+        return value;
+      }
+
+      return "https://" + value;
+    }
+
+    function resetComposer() {
+      input.value = "";
+      linkInput.value = "";
+      imageInput.value = "";
+      imageFileInput.value = "";
+      pendingImageDataUrl = "";
+      selectedFileName.innerText = "尚未選擇圖片";
+    }
+
+    function renderList() {
+      list.innerHTML = "";
+
+      items.forEach(function (item, index) {
+        const li = document.createElement("li");
+
+        const content = document.createElement("div");
+        content.className = "item-content";
+
+        if (item.text) {
+          const textSpan = document.createElement("span");
+          textSpan.className = "item-text";
+          textSpan.innerText = item.text;
+          content.appendChild(textSpan);
+        }
+
+        if (item.link) {
+          const linkAnchor = document.createElement("a");
+          linkAnchor.className = "item-link";
+          linkAnchor.href = item.link;
+          linkAnchor.target = "_blank";
+          linkAnchor.rel = "noopener noreferrer";
+          linkAnchor.innerText = item.link;
+          content.appendChild(linkAnchor);
+        }
+
+        if (item.image) {
+          const image = document.createElement("img");
+          image.className = "item-image";
+          image.src = item.image;
+          image.alt = item.text ? item.text : "清單圖片";
+          image.loading = "lazy";
+          content.appendChild(image);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+
+        const upButton = document.createElement("button");
+        upButton.type = "button";
+        upButton.className = "order-button";
+        upButton.innerText = "上移";
+        upButton.disabled = index === 0;
+        upButton.style.opacity = index === 0 ? "0.5" : "1";
+        upButton.style.cursor = index === 0 ? "not-allowed" : "pointer";
+        upButton.addEventListener("click", function () {
+          moveItem(index, -1);
+        });
+
+        const downButton = document.createElement("button");
+        downButton.type = "button";
+        downButton.className = "order-button";
+        downButton.innerText = "下移";
+        downButton.disabled = index === items.length - 1;
+        downButton.style.opacity = index === items.length - 1 ? "0.5" : "1";
+        downButton.style.cursor = index === items.length - 1 ? "not-allowed" : "pointer";
+        downButton.addEventListener("click", function () {
+          moveItem(index, 1);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-button";
+        deleteButton.innerText = "刪除";
+        deleteButton.addEventListener("click", function () {
+          deleteItem(index);
+        });
+
+        actions.appendChild(upButton);
+        actions.appendChild(downButton);
+        actions.appendChild(deleteButton);
+
+        li.appendChild(content);
+        li.appendChild(actions);
+        list.appendChild(li);
+      });
+
+      countText.innerText = "目前共有 " + items.length + " 筆項目";
+      emptyState.hidden = items.length > 0;
+      clearButton.disabled = items.length === 0;
+      printButton.disabled = items.length === 0;
+      exportButton.disabled = items.length === 0;
+      clearButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      clearButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+      printButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      printButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+      exportButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      exportButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+    }
+
+    function setCloudStatus(message, type) {
+      cloudStatus.innerText = message;
+      cloudStatus.className = "status-bar";
+
+      if (type === "success") {
+        cloudStatus.classList.add("status-success");
+      } else if (type === "warning") {
+        cloudStatus.classList.add("status-warning");
+      } else if (type === "error") {
+        cloudStatus.classList.add("status-error");
+      }
+    }
+
+    function saveAndRender(shouldAutoSync) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      renderList();
+
+      if (shouldAutoSync === false) return;
+
+      const settings = getCloudSettings();
+
+      if (settings.autoSync && settings.endpoint && settings.shareKey && settings.adminKey) {
+        syncToCloud(false);
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
+</body>
+</html>
