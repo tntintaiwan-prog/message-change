@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訊息清單</title>
+  <meta name="theme-color" content="#d46a4d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="訊息清單">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <style>
+    :root {
+      --bg-top: #f6efe4;
+      --bg-bottom: #dce9f2;
+      --card: rgba(255, 255, 255, 0.88);
+      --card-border: rgba(88, 110, 128, 0.16);
+      --text-main: #1f2a33;
+      --text-muted: #61717d;
+      --accent: #d46a4d;
+      --accent-hover: #bc583d;
+      --danger: #d1495b;
+      --danger-hover: #ba3748;
+      --shadow: 0 18px 45px rgba(57, 73, 86, 0.14);
+      --soft-line: rgba(97, 113, 125, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 32%),
+        linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .panel {
+      width: min(100%, 760px);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .composer {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+    }
+
+    .extra-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      border: 1px solid rgba(97, 113, 125, 0.22);
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.85);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus {
+      border-color: rgba(212, 106, 77, 0.65);
+      box-shadow: 0 0 0 4px rgba(212, 106, 77, 0.12);
+    }
+
+    button,
+    .file-picker {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover,
+    .file-picker:hover {
+      transform: translateY(-1px);
+    }
+
+    .add-button {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .add-button:hover {
+      background: var(--accent-hover);
+    }
+
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .file-picker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text-main);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+      padding: 10px 14px;
+    }
+
+    .file-name {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .clear-button {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+      padding: 10px 14px;
+    }
+
+    .clear-button:hover {
+      color: var(--danger);
+      border-color: rgba(209, 73, 91, 0.24);
+      background: rgba(209, 73, 91, 0.06);
+    }
+
+    .secondary-button {
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text-main);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+      padding: 10px 14px;
+    }
+
+    .secondary-button:hover {
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(212, 106, 77, 0.26);
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(97, 113, 125, 0.14);
+    }
+
+    .item-content {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .item-text {
+      word-break: break-word;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .item-link {
+      color: #21659b;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .item-link:hover {
+      text-decoration: underline;
+    }
+
+    .item-image {
+      width: min(100%, 260px);
+      border-radius: 14px;
+      border: 1px solid var(--soft-line);
+      display: block;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .item-actions {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .delete-button {
+      background: var(--danger);
+      color: #fff;
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+
+    .delete-button:hover {
+      background: var(--danger-hover);
+    }
+
+    .order-button {
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text-main);
+      border: 1px solid rgba(97, 113, 125, 0.2);
+      padding: 10px 12px;
+      min-width: 44px;
+    }
+
+    .order-button:hover {
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(212, 106, 77, 0.26);
+    }
+
+    .empty-state {
+      margin: 18px 0 0;
+      padding: 22px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px dashed rgba(97, 113, 125, 0.24);
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .hint {
+      margin: 16px 0 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 680px) {
+      .extra-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .panel {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+
+      .meta {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      li {
+        grid-template-columns: 1fr;
+      }
+
+      .item-actions {
+        justify-content: flex-end;
+      }
+    }
+
+    @media print {
+      #list {
+        counter-reset: item;
+      }
+
+      body {
+        background: #fff;
+        padding: 0;
+        display: block;
+      }
+
+      .panel {
+        width: 100%;
+        max-width: none;
+        background: #fff;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+      }
+
+      h1,
+      .subtitle,
+      .composer,
+      .meta,
+      .actions,
+      .hint,
+      .empty-state {
+        display: none !important;
+      }
+
+      li {
+        background: #fff;
+        border: none;
+        break-inside: avoid;
+        padding: 0;
+        margin: 0 0 14px;
+        display: block;
+        counter-increment: item;
+      }
+
+      .item-actions {
+        display: none;
+      }
+
+      .item-text {
+        display: block;
+        font-size: 12pt;
+        line-height: 1.6;
+      }
+
+      .item-text::before {
+        content: counter(item) ". ";
+      }
+
+      .item-link {
+        display: block;
+        margin-top: 4px;
+        color: #000;
+        text-decoration: none;
+      }
+
+      .item-image {
+        max-width: 240px;
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>我的訊息清單</h1>
+    <p class="subtitle">把文字、連結和圖片先放進來。重新整理頁面也會保留，匯出時會下載和列印內容一致的純文字檔案。</p>
+
+    <section class="composer" aria-label="新增訊息">
+      <div class="input-row">
+        <input type="text" id="inputText" placeholder="輸入一則訊息..." aria-label="訊息內容">
+        <button type="button" class="add-button" id="addButton">新增</button>
+      </div>
+
+      <div class="extra-row">
+        <input type="url" id="linkInput" placeholder="加入連結（可選填）" aria-label="連結網址">
+        <input type="url" id="imageInput" placeholder="加入圖片網址（可選填）" aria-label="圖片網址">
+      </div>
+
+      <div class="file-row">
+        <label class="file-picker" for="imageFileInput">上傳圖片</label>
+        <span id="selectedFileName" class="file-name">尚未選擇本機圖片</span>
+      </div>
+      <input type="file" id="imageFileInput" accept="image/*" class="sr-only">
+    </section>
+
+    <div class="meta">
+      <span id="countText">目前共 0 則訊息</span>
+      <div class="actions">
+        <button type="button" class="secondary-button" id="printButton">列印清單</button>
+        <button type="button" class="secondary-button" id="exportButton">匯出 Word</button>
+        <button type="button" class="secondary-button" id="importButton">匯入資料</button>
+        <button type="button" class="clear-button" id="clearButton">清空全部</button>
+      </div>
+    </div>
+
+    <ul id="list"></ul>
+    <p id="emptyState" class="empty-state">目前還沒有訊息，先新增第一筆吧。</p>
+    <p class="hint">每筆訊息可只有文字，也可附上連結或圖片。匯出會下載和列印內容接近的 TXT 檔；匯入仍支援 TXT、舊版純文字陣列 JSON，以及新版物件格式 JSON。</p>
+    <input type="file" id="fileInput" accept="application/json,.json,.txt" hidden>
+  </main>
+
+  <script>
+    let items = [];
+    let pendingImageDataUrl = "";
+
+    const STORAGE_KEY = "items";
+
+    const input = document.getElementById("inputText");
+    const linkInput = document.getElementById("linkInput");
+    const imageInput = document.getElementById("imageInput");
+    const imageFileInput = document.getElementById("imageFileInput");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const list = document.getElementById("list");
+    const countText = document.getElementById("countText");
+    const emptyState = document.getElementById("emptyState");
+    const addButton = document.getElementById("addButton");
+    const clearButton = document.getElementById("clearButton");
+    const printButton = document.getElementById("printButton");
+    const exportButton = document.getElementById("exportButton");
+    const importButton = document.getElementById("importButton");
+    const fileInput = document.getElementById("fileInput");
+
+    window.onload = function () {
+      const saved = localStorage.getItem(STORAGE_KEY);
+
+      if (saved) {
+        items = normalizeImportedItems(JSON.parse(saved));
+      }
+
+      renderList();
+    };
+
+    addButton.addEventListener("click", addItem);
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        addItem();
+      }
+    });
+
+    clearButton.addEventListener("click", function () {
+      if (items.length === 0) return;
+
+      items = [];
+      saveAndRender();
+    });
+
+    printButton.addEventListener("click", function () {
+      window.print();
+    });
+
+    exportButton.addEventListener("click", exportItems);
+
+    importButton.addEventListener("click", function () {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", importItems);
+
+    imageFileInput.addEventListener("change", function (event) {
+      const file = event.target.files[0];
+
+      if (!file) {
+        pendingImageDataUrl = "";
+        selectedFileName.innerText = "尚未選擇本機圖片";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (loadEvent) {
+        pendingImageDataUrl = loadEvent.target.result;
+        selectedFileName.innerText = file.name;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function addItem() {
+      const text = input.value.trim();
+      const link = normalizeUrl(linkInput.value.trim());
+      const image = normalizeUrl(imageInput.value.trim()) || pendingImageDataUrl;
+
+      if (text === "" && link === "" && image === "") return;
+
+      items.push({
+        text: text,
+        link: link,
+        image: image
+      });
+
+      saveAndRender();
+      resetComposer();
+      input.focus();
+    }
+
+    function deleteItem(index) {
+      items.splice(index, 1);
+      saveAndRender();
+    }
+
+    function moveItem(index, direction) {
+      const targetIndex = index + direction;
+
+      if (targetIndex < 0 || targetIndex >= items.length) return;
+
+      const currentItem = items[index];
+      items[index] = items[targetIndex];
+      items[targetIndex] = currentItem;
+      saveAndRender();
+    }
+
+    function exportItems() {
+      const blob = new Blob(["\ufeff" + buildWordExportDocument()], {
+        type: "application/msword;charset=utf-8"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "message-list-print.doc";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function buildPrintableTextExport() {
+      const lines = ["我的訊息清單", "共 " + items.length + " 則訊息", ""];
+
+      items.forEach(function (item, index) {
+        lines.push((index + 1) + ". " + (item.text || "(無文字內容)"));
+
+        if (item.link) {
+          lines.push("   連結: " + item.link);
+        }
+
+        if (item.image) {
+          lines.push(
+            "   圖片: " +
+            (item.image.indexOf("data:image/") === 0 ? "[內嵌圖片資料]" : item.image)
+          );
+        }
+
+        lines.push("");
+      });
+
+      return lines.join("\r\n");
+    }
+
+    function buildWordExportDocument() {
+      const listMarkup = items.map(function (item, index) {
+        const parts = [];
+
+        parts.push(
+          '<div class="item-title">' +
+          (index + 1) +
+          ". " +
+          escapeWordHtml(item.text || "(無文字內容)") +
+          "</div>"
+        );
+
+        if (item.link) {
+          parts.push(
+            '<a class="item-link" href="' +
+            escapeWordAttribute(item.link) +
+            '">' +
+            escapeWordHtml(item.link) +
+            "</a>"
+          );
+        }
+
+        if (item.image) {
+          parts.push(
+            '<img class="item-image" src="' +
+            escapeWordAttribute(item.image) +
+            '" alt="' +
+            escapeWordAttribute(item.text || "訊息圖片") +
+            '">'
+          );
+        }
+
+        return '<li class="item">' + parts.join("") + "</li>";
+      }).join("");
+
+      return (
+        '<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>訊息清單</title><style>' +
+        "body{font-family:'Segoe UI','Noto Sans TC',sans-serif;color:#1f2a33;background:#fff;margin:0;padding:32px;}main{max-width:800px;margin:0 auto;}h1{margin:0 0 8px;font-size:26px;}p{margin:0 0 24px;color:#61717d;}ul{list-style:none;margin:0;padding:0;}.item{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid #d9e0e5;}.item-title{font-size:12pt;line-height:1.6;white-space:pre-wrap;word-break:break-word;}.item-link{display:block;margin-top:6px;color:#000;text-decoration:none;word-break:break-all;}.item-image{display:block;max-width:320px;max-height:320px;margin-top:10px;border:1px solid #d9e0e5;border-radius:10px;}@page{margin:20mm;}" +
+        "</style></head><body><main><h1>我的訊息清單</h1><p>共 " +
+        items.length +
+        " 則訊息</p><ul>" +
+        listMarkup +
+        "</ul></main></body></html>"
+      );
+    }
+
+    function escapeWordHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/\r?\n/g, "<br>");
+    }
+
+    function escapeWordAttribute(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function importItems(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function (loadEvent) {
+        try {
+          const content = loadEvent.target.result;
+          let importedItems;
+
+          if (file.name.toLowerCase().endsWith(".txt")) {
+            importedItems = content
+              .split(/\r?\n/)
+              .map(function (item) {
+                return item.trim();
+              })
+              .filter(function (item) {
+                return item !== "";
+              });
+          } else {
+            const parsed = JSON.parse(content);
+            importedItems = Array.isArray(parsed) ? parsed : parsed.items;
+          }
+
+          items = normalizeImportedItems(importedItems);
+          saveAndRender();
+          input.focus();
+        } catch (error) {
+          alert("匯入失敗，請選擇正確的 TXT 或 JSON 清單檔案。");
+        } finally {
+          fileInput.value = "";
+        }
+      };
+
+      reader.readAsText(file, "utf-8");
+    }
+
+    function normalizeImportedItems(rawItems) {
+      if (!Array.isArray(rawItems)) {
+        throw new Error("invalid-format");
+      }
+
+      return rawItems.map(function (item) {
+        if (typeof item === "string") {
+          return {
+            text: item,
+            link: "",
+            image: ""
+          };
+        }
+
+        if (!item || typeof item !== "object") {
+          throw new Error("invalid-format");
+        }
+
+        const normalizedItem = {
+          text: typeof item.text === "string" ? item.text : "",
+          link: typeof item.link === "string" ? item.link : "",
+          image: typeof item.image === "string" ? item.image : ""
+        };
+
+        if (normalizedItem.text === "" && normalizedItem.link === "" && normalizedItem.image === "") {
+          throw new Error("invalid-format");
+        }
+
+        return normalizedItem;
+      });
+    }
+
+    function normalizeUrl(value) {
+      if (value === "") return "";
+
+      if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value)) {
+        return value;
+      }
+
+      return "https://" + value;
+    }
+
+    function resetComposer() {
+      input.value = "";
+      linkInput.value = "";
+      imageInput.value = "";
+      imageFileInput.value = "";
+      pendingImageDataUrl = "";
+      selectedFileName.innerText = "尚未選擇本機圖片";
+    }
+
+    function renderList() {
+      list.innerHTML = "";
+
+      items.forEach(function (item, index) {
+        const li = document.createElement("li");
+
+        const content = document.createElement("div");
+        content.className = "item-content";
+
+        if (item.text) {
+          const textSpan = document.createElement("span");
+          textSpan.className = "item-text";
+          textSpan.innerText = item.text;
+          content.appendChild(textSpan);
+        }
+
+        if (item.link) {
+          const linkAnchor = document.createElement("a");
+          linkAnchor.className = "item-link";
+          linkAnchor.href = item.link;
+          linkAnchor.target = "_blank";
+          linkAnchor.rel = "noopener noreferrer";
+          linkAnchor.innerText = item.link;
+          content.appendChild(linkAnchor);
+        }
+
+        if (item.image) {
+          const image = document.createElement("img");
+          image.className = "item-image";
+          image.src = item.image;
+          image.alt = item.text ? item.text : "訊息圖片";
+          image.loading = "lazy";
+          content.appendChild(image);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+
+        const upButton = document.createElement("button");
+        upButton.type = "button";
+        upButton.className = "order-button";
+        upButton.innerText = "上移";
+        upButton.disabled = index === 0;
+        upButton.style.opacity = index === 0 ? "0.5" : "1";
+        upButton.style.cursor = index === 0 ? "not-allowed" : "pointer";
+        upButton.addEventListener("click", function () {
+          moveItem(index, -1);
+        });
+
+        const downButton = document.createElement("button");
+        downButton.type = "button";
+        downButton.className = "order-button";
+        downButton.innerText = "下移";
+        downButton.disabled = index === items.length - 1;
+        downButton.style.opacity = index === items.length - 1 ? "0.5" : "1";
+        downButton.style.cursor = index === items.length - 1 ? "not-allowed" : "pointer";
+        downButton.addEventListener("click", function () {
+          moveItem(index, 1);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-button";
+        deleteButton.innerText = "刪除";
+        deleteButton.addEventListener("click", function () {
+          deleteItem(index);
+        });
+
+        actions.appendChild(upButton);
+        actions.appendChild(downButton);
+        actions.appendChild(deleteButton);
+
+        li.appendChild(content);
+        li.appendChild(actions);
+        list.appendChild(li);
+      });
+
+      countText.innerText = "目前共 " + items.length + " 則訊息";
+      emptyState.hidden = items.length > 0;
+      clearButton.disabled = items.length === 0;
+      printButton.disabled = items.length === 0;
+      exportButton.disabled = items.length === 0;
+      clearButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      clearButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+      printButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      printButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+      exportButton.style.opacity = items.length === 0 ? "0.5" : "1";
+      exportButton.style.cursor = items.length === 0 ? "not-allowed" : "pointer";
+    }
+
+    function saveAndRender() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      renderList();
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
+</body>
+</html>
