@@ -1,4 +1,4 @@
-const CACHE_NAME = "shared-list-pwa-v3";
+const CACHE_NAME = "shared-list-pwa-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -33,6 +33,18 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
+
+  const requestUrl = new URL(event.request.url);
+  const pageOrigin = self.location.origin;
+
+  // Never cache API reads/writes. They must always hit the network.
+  if (
+    requestUrl.pathname === "/" &&
+    requestUrl.origin !== pageOrigin
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(function (cachedResponse) {

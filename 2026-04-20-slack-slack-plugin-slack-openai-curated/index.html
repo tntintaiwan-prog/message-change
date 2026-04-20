@@ -735,6 +735,7 @@
       try {
         const response = await fetch(settings.endpoint, {
           method: "POST",
+          cache: "no-store",
           headers: {
             "Content-Type": "application/json",
             "X-Share-Key": settings.shareKey,
@@ -770,8 +771,9 @@
       setCloudStatus("正在從雲端讀取清單...", "warning");
 
       try {
-        const response = await fetch(settings.endpoint, {
+        const response = await fetch(settings.endpoint + "?t=" + Date.now(), {
           method: "GET",
+          cache: "no-store",
           headers: {
             "X-Share-Key": settings.shareKey
           }
