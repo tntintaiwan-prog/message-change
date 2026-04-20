@@ -73,6 +73,8 @@ function json(data, status, corsHeaders) {
     status: status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
       ...corsHeaders
     }
   });

@@ -785,11 +785,13 @@
           throw new Error((data && data.error) || "讀取失敗");
         }
 
-        items = normalizeImportedItems(data && data.items ? data.items : []);
+        const remoteItems = normalizeImportedItems(data && data.items ? data.items : []);
+        items = remoteItems;
         saveAndRender(false);
 
         if (showSuccessMessage) {
-          setCloudStatus("已從雲端載入最新清單。", "success");
+          const updatedLabel = data && data.updatedAt ? "，最後更新: " + new Date(data.updatedAt).toLocaleString() : "";
+          setCloudStatus("已從雲端載入 " + remoteItems.length + " 筆資料" + updatedLabel + "。", "success");
         }
       } catch (error) {
         setCloudStatus("從雲端讀取失敗: " + error.message, "error");
