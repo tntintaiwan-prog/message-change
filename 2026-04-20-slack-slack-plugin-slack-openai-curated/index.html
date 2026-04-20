@@ -535,9 +535,12 @@
   <script>
     let items = [];
     let pendingImageDataUrl = "";
+    let lastCloudUpdatedAt = null;
+    let hasLoadedCloudSnapshot = false;
 
     const STORAGE_KEY = "shared-list-items";
     const CLOUD_SETTINGS_KEY = "shared-list-cloud-settings";
+    const CLOUD_META_KEY = "shared-list-cloud-meta";
 
     const input = document.getElementById("inputText");
     const linkInput = document.getElementById("linkInput");
@@ -565,6 +568,7 @@
     window.onload = function () {
       loadLocalItems();
       loadCloudSettings();
+      loadCloudMeta();
       renderList();
     };
 
@@ -660,6 +664,28 @@
       }
     }
 
+    function loadCloudMeta() {
+      const saved = localStorage.getItem(CLOUD_META_KEY);
+
+      if (!saved) return;
+
+      try {
+        const meta = JSON.parse(saved);
+        lastCloudUpdatedAt = typeof meta.lastCloudUpdatedAt === "string" ? meta.lastCloudUpdatedAt : null;
+        hasLoadedCloudSnapshot = meta.hasLoadedCloudSnapshot === true;
+      } catch (error) {
+        lastCloudUpdatedAt = null;
+        hasLoadedCloudSnapshot = false;
+      }
+    }
+
+    function saveCloudMeta() {
+      localStorage.setItem(CLOUD_META_KEY, JSON.stringify({
+        lastCloudUpdatedAt: lastCloudUpdatedAt,
+        hasLoadedCloudSnapshot: hasLoadedCloudSnapshot
+      }));
+    }
+
     function saveCloudSettings() {
       const settings = getCloudSettings();
 
@@ -730,6 +756,11 @@
 
       if (!settings) return;
 
+      if (!showSuccessMessage && !hasLoadedCloudSnapshot) {
+        setCloudStatus("這台裝置尚未先從雲端載入資料，已停止自動同步以避免覆蓋雲端。", "warning");
+        return;
+      }
+
       setCloudStatus("正在把清單同步到雲端...", "warning");
 
       try {
@@ -743,15 +774,27 @@
           },
           body: JSON.stringify({
             items: items,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            expectedUpdatedAt: lastCloudUpdatedAt
           })
         });
 
         const data = await parseJsonSafely(response);
 
         if (!response.ok) {
+          if (response.status === 409) {
+            const updatedLabel = data && data.currentUpdatedAt
+              ? "，雲端最後更新: " + new Date(data.currentUpdatedAt).toLocaleString()
+              : "";
+            setCloudStatus("自動同步已停止，因為雲端資料比本機新。請先按「從雲端載入」再決定是否覆蓋" + updatedLabel + "。", "warning");
+            return;
+          }
           throw new Error((data && data.error) || "同步失敗");
         }
+
+        lastCloudUpdatedAt = data && typeof data.updatedAt === "string" ? data.updatedAt : null;
+        hasLoadedCloudSnapshot = true;
+        saveCloudMeta();
 
         if (showSuccessMessage) {
           setCloudStatus("已成功同步到雲端。", "success");
@@ -787,6 +830,9 @@
 
         const remoteItems = normalizeImportedItems(data && data.items ? data.items : []);
         items = remoteItems;
+        lastCloudUpdatedAt = data && typeof data.updatedAt === "string" ? data.updatedAt : null;
+        hasLoadedCloudSnapshot = true;
+        saveCloudMeta();
         saveAndRender(false);
 
         if (showSuccessMessage) {

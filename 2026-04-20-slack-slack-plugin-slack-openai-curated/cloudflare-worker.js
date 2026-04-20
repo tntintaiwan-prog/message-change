@@ -54,6 +54,26 @@ export default {
         return json({ error: "invalid-items" }, 400, corsHeaders);
       }
 
+      const existing = await env.SHARED_LISTS.get(storageKey, "json");
+      const currentUpdatedAt = existing && typeof existing.updatedAt === "string"
+        ? existing.updatedAt
+        : null;
+      const expectedUpdatedAt = typeof payload.expectedUpdatedAt === "string"
+        ? payload.expectedUpdatedAt
+        : null;
+
+      if (currentUpdatedAt !== expectedUpdatedAt) {
+        return json(
+          {
+            error: "conflict",
+            message: "remote-data-has-changed",
+            currentUpdatedAt: currentUpdatedAt
+          },
+          409,
+          corsHeaders
+        );
+      }
+
       const record = {
         items: payload.items,
         updatedAt: typeof payload.updatedAt === "string" ? payload.updatedAt : new Date().toISOString()
